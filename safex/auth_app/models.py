@@ -21,7 +21,7 @@ class User(models.Model):
 
 class Files(models.Model):
     name_file = models.CharField(max_length=50)  
-    date = models.DateField(auto_now_add=True)  # Auto-ajouter la date lors de la création
+    date = models.DateField()  # Auto-ajouter la date lors de la création
     id_user = models.ForeignKey(User, on_delete=models.CASCADE)  # Clé étrangère vers User  
     id_department = models.ForeignKey(Department, on_delete=models.CASCADE)  # Clé étrangère correcte  
 

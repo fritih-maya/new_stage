@@ -10,6 +10,18 @@ class AdminArea(admin.AdminSite):
 
 safex = AdminArea(name='safex')    
 
-safex.register(User)
-safex.register(Department)
-safex.register(Files)
+
+class AdminFiles(admin.ModelAdmin):
+    fields = ['name_file','date']
+
+safex.register(Files, AdminFiles)
+
+class AdminDep(admin.ModelAdmin):
+    list_display = ['name_dep','id_department'] 
+    
+safex.register(Department, AdminDep)   
+
+class AdminUser(admin.ModelAdmin):
+    list_display = ['name_user','id_user']
+
+safex.register(User, AdminUser)    
