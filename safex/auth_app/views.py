@@ -4,6 +4,8 @@ from .form import CustomUserCreationForm
 from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import get_user_model
+
 
 # Create your views here.
 def inscription(request):
@@ -17,17 +19,28 @@ def inscription(request):
         form = CustomUserCreationForm()
     return render(request, 'inscription.html', {'form': form})
 
+User = get_user_model()
 
 def connexion(request):
     if request.method == 'POST':
-        username = request.POST['username']
+        email = request.POST['email'] 
         password = request.POST['password']
-        user = authenticate(request, username=username, password=password)
+
+        # Vérifier si un utilisateur existe avec cet email
+        try:
+            user = User.objects.get(mail_user=email)  # Rechercher l'utilisateur avec mail_user
+        except User.DoesNotExist:
+            messages.error(request, "Utilisateur non trouvé.")
+            return render(request, 'connexion.html')
+
+        # Authentifier l'utilisateur
+        user = authenticate(request, username=user.name_user, password=password) 
         if user is not None:
             login(request, user)
-            return redirect('acceuil')
+            return redirect('acceuil')  # Redirige vers la page d'accueil
         else:
-            messages.error(request, 'Nom d\'utilisateur ou mot de passe incorrect.')
+            messages.error(request, "Mot de passe incorrect.")
+    
     return render(request, 'connexion.html')
 
 @login_required
