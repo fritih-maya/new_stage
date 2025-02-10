@@ -3,6 +3,7 @@ from .models import User
 from django.contrib.auth.admin import UserAdmin
 from .models import Department
 from .models import Files
+from .forms import CustomUserChangeForm
 
 class AdminArea(admin.AdminSite):
     index_title ="Administration "
@@ -32,27 +33,37 @@ class AdminDep(admin.ModelAdmin):
     
 safex.register(Department, AdminDep)   
 
-class CustomUserAdmin(UserAdmin):
-    # Définir les champs qui doivent apparaître dans le formulaire d'ajout
+class CustomUserAdmin(admin.ModelAdmin):
+    form = CustomUserChangeForm
+
     add_fieldsets = (
-        (None, {
+        ("Informations de connexion", {
             'classes': ('wide',),
-            'fields': ('mail_user', 'password1', 'password2', 'name_user', 'id_dep', 'type', 'role'),
+            'fields': ('mail_user', 'password1', 'password2'),
+        }),
+        ("Informations personnelles", {
+            'classes': ('wide',),
+            'fields': ('name_user', 'id_dep', 'type', 'role'),
         }),
     )
-    
-    # Définir les champs qui doivent apparaître dans le formulaire de modification
+
     fieldsets = (
-        (None, {'fields': ('mail_user', 'password', 'name_user', 'id_dep', 'type', 'role')}),
+        ("Informations de connexion", {'fields': ('mail_user', 'password')}),
+        ("Informations personnelles", {'fields': ('name_user', 'id_dep', 'type', 'role')}),
     )
 
-    # Définir les colonnes visibles dans la liste des utilisateurs
-    list_display = ('mail_user', 'name_user', 'id_dep', 'type', 'role', 'is_staff', 'is_active')
+    list_display = ('mail_user', 'name_user', 'get_departments', 'type', 'role')
 
-    # Les champs utilisés pour rechercher dans l'interface d'administration
+    def get_departments(self, obj):
+        """ Affiche le département dans l'admin Django """
+        return obj.id_dep.name_dep if obj.id_dep else "Aucun"
+
+    get_departments.short_description = 'Départements'
+
     search_fields = ('mail_user', 'name_user')
-
-    # Le champ utilisé pour trier dans l'administration
     ordering = ('mail_user',)
 
-safex.register(User, CustomUserAdmin)    
+    raw_id_fields = ('id_dep',)  # ✅ Utilisation correcte pour ForeignKey
+
+safex.register(User, CustomUserAdmin)
+

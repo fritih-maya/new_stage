@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.core.exceptions import ValidationError
 from django.conf import settings
 
 class Department(models.Model):
@@ -34,11 +35,27 @@ class UserManager(BaseUserManager):
 class User(AbstractUser):  # ✅ Hériter de AbstractUser
     id_user = models.AutoField(primary_key=True)
     name_user = models.CharField(max_length=50)
+    username = None  # 🔥 Désactiver le champ username
     mail_user = models.EmailField(unique=True, max_length=50)  # EmailField au lieu de CharField
     password = models.CharField(max_length=128, default='')
     id_dep = models.ForeignKey('Department', on_delete=models.CASCADE, null=True, blank=True)
-    type = models.CharField(max_length=50)
-    role = models.CharField(max_length=100)
+    TYPE_CHOICES = [
+        ('chef_service', 'Chef de service'),
+        ('directeur_general', 'Directeur général'),
+        ('employe_simple', 'Employé simple'),
+    ]
+    type = models.CharField(max_length=50, choices=TYPE_CHOICES, default='employe_simple')
+    ROLE_CHOICE = [
+        ('0', '----'),
+        ('1', 'select'),
+        ('2', 'upload '),
+        ('3', 'delete'),
+        ('4', 'select + upload'),
+        ('5', 'select + delete'),
+        ('6', 'upload + delete'),
+        ('7', 'select + upload + delete'),
+    ]
+    role = models.CharField(max_length=100, choices=ROLE_CHOICE, default='rien')
 
     objects = UserManager()
 
@@ -48,6 +65,17 @@ class User(AbstractUser):  # ✅ Hériter de AbstractUser
 
     def __str__(self):
         return self.name_user  # Affiche le nom dans l'admin Django
+    
+    def clean(self):
+       super().clean()
+       if self.type not in ['chef_service', 'directeur_general'] and self.id_dep.count() > 1:
+        raise ValidationError('Seuls les chefs de service et les directeurs généraux peuvent appartenir à plusieurs départements.')
+
+def save(self, *args, **kwargs):
+    if self.type not in ['chef_service', 'directeur_general'] and self.id_dep.count() > 1:
+        raise ValidationError('Seuls les chefs de service et les directeurs généraux peuvent appartenir à plusieurs départements.')
+    super().save(*args, **kwargs)  # ✅ On sauvegarde seulement si la condition est respectée
+
 
 class Files(models.Model):
     name_file = models.CharField(max_length=50)
