@@ -24,6 +24,7 @@ class UserManager(BaseUserManager):
     def create_superuser(self, mail_user, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('name_user', mail_user.split('@')[0])  # Default name if not provided
 
         if extra_fields.get('is_staff') is not True:
             raise ValueError('Superuser must have is_staff=True.')
@@ -32,19 +33,34 @@ class UserManager(BaseUserManager):
 
         return self.create_user(mail_user, password, **extra_fields)
 
-class User(AbstractUser):  # ✅ Hériter de AbstractUser
+class User(AbstractUser):
     id_user = models.AutoField(primary_key=True)
     name_user = models.CharField(max_length=50)
-    username = None  # 🔥 Désactiver le champ username
-    mail_user = models.EmailField(unique=True, max_length=50)  # EmailField au lieu de CharField
-    password = models.CharField(max_length=128, default='')
-    id_dep = models.ForeignKey('Department', on_delete=models.CASCADE, null=True, blank=True)
+    username = None
+    mail_user = models.EmailField(unique=True, max_length=50)
+    password = models.CharField(max_length=128)
+
+    departement_principal = models.ForeignKey(
+        'Department',
+        on_delete=models.SET_NULL,
+        null=True, 
+        blank=True,
+        related_name="utilisateurs_principaux"
+    )
+
+    departements_secondaires = models.ManyToManyField(
+        'Department',
+        blank=True,
+        related_name="utilisateurs_secondaires"
+    )
+
     TYPE_CHOICES = [
         ('chef_service', 'Chef de service'),
         ('directeur_general', 'Directeur général'),
         ('employe_simple', 'Employé simple'),
     ]
     type = models.CharField(max_length=50, choices=TYPE_CHOICES, default='employe_simple')
+
     ROLE_CHOICE = [
         ('0', '----'),
         ('1', 'select'),
@@ -55,27 +71,32 @@ class User(AbstractUser):  # ✅ Hériter de AbstractUser
         ('6', 'upload + delete'),
         ('7', 'select + upload + delete'),
     ]
-    role = models.CharField(max_length=100, choices=ROLE_CHOICE, default='rien')
+    role = models.CharField(max_length=100, choices=ROLE_CHOICE, default='0')
 
     objects = UserManager()
 
-    # Définir USERNAME_FIELD pour l'authentification
-    USERNAME_FIELD = 'mail_user'  # Utiliser mail_user comme identifiant unique
-    REQUIRED_FIELDS = ['name_user']  # Champs obligatoires lors de la création d'un superuser
+    USERNAME_FIELD = 'mail_user'
+    REQUIRED_FIELDS = ['name_user']
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None  # Vérifie si c'est une nouvelle instance
+        
+        # Sauvegarde d'abord l'utilisateur
+        super().save(*args, **kwargs)
+        
+        # Si c'est un employé simple, on s'assure qu'il n'a pas de départements secondaires
+        if self.type == 'employe_simple':
+            # On utilise une transaction pour éviter les problèmes de cohérence
+            from django.db import transaction
+            with transaction.atomic():
+                self.departements_secondaires.clear()
+
+    def clean(self):
+        # On ne lève plus d'exception, on laisse la méthode save gérer le nettoyage
+        pass
 
     def __str__(self):
-        return self.name_user  # Affiche le nom dans l'admin Django
-    
-    def clean(self):
-       super().clean()
-       if self.type not in ['chef_service', 'directeur_general'] and self.id_dep.count() > 1:
-        raise ValidationError('Seuls les chefs de service et les directeurs généraux peuvent appartenir à plusieurs départements.')
-
-def save(self, *args, **kwargs):
-    if self.type not in ['chef_service', 'directeur_general'] and self.id_dep.count() > 1:
-        raise ValidationError('Seuls les chefs de service et les directeurs généraux peuvent appartenir à plusieurs départements.')
-    super().save(*args, **kwargs)  # ✅ On sauvegarde seulement si la condition est respectée
-
+        return self.name_user
 
 class Files(models.Model):
     name_file = models.CharField(max_length=50)

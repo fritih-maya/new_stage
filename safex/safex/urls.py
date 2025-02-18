@@ -4,6 +4,7 @@ from django.urls import include, re_path
 from django.shortcuts import redirect
 from auth_app import views
 from auth_app.admin import safex
+from auth_app .views import ajouter_fichier, ajouter_autre_fichier
 
 urlpatterns = [
     # Page d'administration personnalisée
@@ -13,7 +14,9 @@ urlpatterns = [
     path('connexion/', views.connexion, name='connexion'),
     path('acceuil/', views.acceuil, name='acceuil'),
     path('deconnexion/', views.deconnexion, name='deconnexion'),
+    path('ajouter_fichier/', views.ajouter_fichier, name='ajouter_fichier'),
+    path('ajouter_autre_fichier/', views.ajouter_autre_fichier, name='ajouter_autre_fichier'),
 
     # Redirection de l'URL racine vers la page de connexion
-    path('', lambda request: redirect('connexion')),
+     path('', lambda request: redirect('connexion'), name='home'),
 ]

@@ -1,17 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    <div class="container home">
-        <h2>Bienvenue, {{ user.username }}!</h2>
-        <button><a href="{% url 'deconnexion' %}">Déconnexion</a></button>
-    </div>
+    <title>Dashboard</title>
+    <!-- Icônes -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
-        /* CSS */
         /* Import Google font - Poppins */
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap');
         * {
@@ -20,43 +15,78 @@
             box-sizing: border-box;
             font-family: 'Poppins', sans-serif;
         }
-        h2 {
-            margin: 20px 0;
-            text-align: center;
-        }
         body {
             min-height: 100vh;
             width: 100%;
-            background: #009579;
+            background: #f4f4f4;
             display: flex;
             justify-content: center;
             align-items: center;
         }
-        .container {
-            width: 400px;
+        .dashboard {
+            width: 500px;
             background: #fff;
-            border-radius: 7px;
-            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
             padding: 30px;
+            text-align: center;
         }
-        a {
-            color: #fff;
-            text-decoration: 0;
+        h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
         }
         button {
-            color: #fff;
             background: #009579;
+            color: #fff;
             width: 100%;
-            padding: 10px;
-            font-size: 17px;
-            margin-top: 10px;
+            padding: 12px;
+            font-size: 16px;
             border: none;
-            border-radius: 6px;
-            outline: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
         button:hover {
-            background: #006653;
+            background: #007a63;
+        }
+        .logout {
+            background: #e74c3c;
+        }
+        .logout:hover {
+            background: #c0392b;
         }
     </style>
+</head>
+<body>
+
+    <div class="dashboard">
+        <h2>Bienvenue, {{ request.user.username }} !</h2>
+
+        <div class="buttons">
+            <button onclick="window.location.href='{% url 'ajouter_fichier' %}'">
+                <i class="fas fa-upload"></i> Ajouter un fichier
+            </button>            
+            
+            <button onclick="window.location.href='{% url 'ajouter_autre_fichier' %}'">
+                <i class="fas fa-file"></i> Ajouter un autre fichier
+            </button>
+            
+            <button class="logout" onclick="window.location.href='{% url 'deconnexion' %}'">
+                <i class="fas fa-sign-out-alt"></i> Déconnexion
+            </button>
+            
+            
+        </div>
+    </div>
+
 </body>
 </html>

@@ -3,6 +3,8 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
+from .models import Files  
+from .forms_file import FilesForm  
 
 User = get_user_model()
 
@@ -31,8 +33,48 @@ def connexion(request):
 
 @login_required
 def acceuil(request):
-    return render(request, 'acceuil.html')
+    """ Page d'accueil avec liste des fichiers """
+    fichiers = Files.objects.all()  # Récupère tous les fichiers
+    return render(request, 'acceuil.html', {'fichiers': fichiers})
 
+
+@login_required
+def ajouter_fichier(request):
+    """ Ajout d'un fichier par l'utilisateur connecté """
+    if request.method == "POST":
+        form = FilesForm(request.POST, request.FILES)
+        if form.is_valid():
+            fichier = form.save(commit=False)
+            fichier.utilisateur = request.user  # Associe le fichier à l'utilisateur connecté
+            fichier.save()
+            messages.success(request, "Fichier ajouté avec succès !")
+            return redirect('acceuil')  
+    else:
+        form = FilesForm()
+    
+    return render(request, 'ajouter_fichier.html', {'form': form})
+
+
+@login_required
+def ajouter_autre_fichier(request):
+    """ Ajout d'un autre type de fichier """
+    if request.method == "POST":
+        form = FilesForm(request.POST, request.FILES)
+        if form.is_valid():
+            fichier = form.save(commit=False)
+            fichier.utilisateur = request.user  # Associe le fichier à l'utilisateur connecté
+            fichier.save()
+            messages.success(request, "Autre fichier ajouté avec succès !")
+            return redirect('acceuil')
+    else:
+        form = FilesForm()
+    
+    return render(request, 'ajouter_autre_fichier.html', {'form': form})
+
+
+@login_required
 def deconnexion(request):
+    """ Déconnexion de l'utilisateur """
     logout(request)
+    messages.success(request, "Vous avez été déconnecté avec succès.")
     return redirect('connexion')

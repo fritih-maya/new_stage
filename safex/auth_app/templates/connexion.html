@@ -17,7 +17,7 @@
             </div>
             {% endif %}
             <p class="info">Veuillez entrer vos identifiants pour vous connecter. Si vous n'avez pas de compte, contactez l'administrateur.</p>
-            <form method="POST">
+            <form method="POST" action="{% url 'connexion' %}">
                 {% csrf_token %}
                 <input type="email" name="email" placeholder="Email" required>
                 <input type="password" name="password" placeholder="Mot de passe" required>
