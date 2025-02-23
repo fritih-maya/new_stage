@@ -45,7 +45,15 @@ def ajouter_fichier(request):
         form = FilesForm(request.POST, request.FILES)
         if form.is_valid():
             fichier = form.save(commit=False)
-            fichier.utilisateur = request.user  # Associe le fichier à l'utilisateur connecté
+            fichier.id_user = request.user  # ✅ Associe l'utilisateur
+
+            # ✅ Assigne automatiquement le département principal de l'utilisateur
+            if request.user.departement_principal:
+                fichier.id_department = request.user.departement_principal  
+            else:
+                messages.error(request, "Vous devez avoir un département principal.")
+                return redirect('ajouter_fichier')
+
             fichier.save()
             messages.success(request, "Fichier ajouté avec succès !")
             return redirect('acceuil')  
@@ -54,22 +62,6 @@ def ajouter_fichier(request):
     
     return render(request, 'ajouter_fichier.html', {'form': form})
 
-
-@login_required
-def ajouter_autre_fichier(request):
-    """ Ajout d'un autre type de fichier """
-    if request.method == "POST":
-        form = FilesForm(request.POST, request.FILES)
-        if form.is_valid():
-            fichier = form.save(commit=False)
-            fichier.utilisateur = request.user  # Associe le fichier à l'utilisateur connecté
-            fichier.save()
-            messages.success(request, "Autre fichier ajouté avec succès !")
-            return redirect('acceuil')
-    else:
-        form = FilesForm()
-    
-    return render(request, 'ajouter_autre_fichier.html', {'form': form})
 
 
 @login_required
