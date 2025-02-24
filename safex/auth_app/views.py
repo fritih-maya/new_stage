@@ -33,9 +33,23 @@ def connexion(request):
 
 @login_required
 def acceuil(request):
-    """ Page d'accueil avec liste des fichiers """
-    fichiers = Files.objects.all()  # Récupère tous les fichiers
-    return render(request, 'acceuil.html', {'fichiers': fichiers})
+    """ Page d'accueil avec liste des fichiers selon le rôle de l'utilisateur """
+
+    user = request.user  
+    fichiers = Files.objects.none()  # Par défaut, aucun fichier
+
+    # Récupère les rôles de l'utilisateur dans chaque département
+    department_roles = user.get_department_roles()
+    
+    # Liste des départements où l'utilisateur peut au moins "sélectionner"
+    authorized_departments = [dep_id for dep_id, role in department_roles.items() if role in ['1', '4', '5', '7']]
+
+    # Récupère les fichiers des départements autorisés
+    if authorized_departments:
+        fichiers = Files.objects.filter(id_department__in=authorized_departments)
+
+    return render(request, 'acceuil.html', {'fichiers': fichiers, 'roles': department_roles})
+
 
 
 @login_required
@@ -62,7 +76,21 @@ def ajouter_fichier(request):
     
     return render(request, 'ajouter_fichier.html', {'form': form})
 
+@login_required
+def supprimer_fichier(request, fichier_id):
+    """ Suppression d'un fichier selon le rôle de l'utilisateur """
 
+    fichier = Files.objects.get(id=fichier_id)
+    user_roles = request.user.get_department_roles()
+
+    # Vérifie si l'utilisateur a la permission de supprimer dans ce département
+    if fichier.id_department.id in user_roles and user_roles[fichier.id_department.id] in ['3', '5', '6', '7']:
+        fichier.delete()
+        messages.success(request, "Fichier supprimé avec succès !")
+    else:
+        messages.error(request, "Vous n'avez pas l'autorisation de supprimer ce fichier.")
+
+    return redirect('acceuil')
 
 @login_required
 def deconnexion(request):

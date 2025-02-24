@@ -45,6 +45,8 @@ class CustomUserAdmin(UserAdmin):
     list_display = ('mail_user', 'name_user', 'get_departments', 'type', 'is_superuser')
     list_editable = ('type',)
     
+    ordering = ('mail_user',)  # ✅ Correction ici pour éviter l'erreur
+
     add_fieldsets = (
         ("Informations de connexion", {
             'classes': ('wide',),
@@ -61,10 +63,10 @@ class CustomUserAdmin(UserAdmin):
     )
     
     fieldsets = (
-        ("Informations de connexion", {'fields': ('mail_user', 'password')}),
-        ("Informations personnelles", {'fields': ('name_user', 'type')}),
-        ("Départements", {'fields': ('departement_principal',)}),
-        ("Permissions", {'fields': ('is_active', 'is_staff', 'is_superuser')}),
+        ("Informations de connexion", {'fields': ('mail_user', 'password')}),  
+        ("Informations personnelles", {'fields': ('name_user', 'type')}),  
+        ("Départements", {'fields': ('departement_principal',)}),  
+        ("Permissions", {'fields': ('is_active', 'is_staff', 'is_superuser')}),  
     )
     
     inlines = [UserDepartmentRoleInline]
@@ -78,13 +80,12 @@ class CustomUserAdmin(UserAdmin):
 
     def save_model(self, request, obj, form, change):
         if obj.type == 'employe_simple':
-            obj.departements_secondaires.clear()
-            UserDepartmentRole.objects.filter(user=obj).delete()  # Supprime les départements secondaires
+           obj.save()  # ✅ Sauvegarde l'utilisateur avant d'accéder à ManyToMany
+           obj.departments_with_roles.clear()  
+        UserDepartmentRole.objects.filter(user=obj).delete()  # Supprime les rôles secondaires
+
         super().save_model(request, obj, form, change)
 
-    search_fields = ('mail_user', 'name_user')
-    ordering = ('mail_user',)
-    raw_id_fields = ('departement_principal',)
 
 # Enregistrement des modèles
 safex.register(Files, AdminFiles)

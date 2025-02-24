@@ -67,9 +67,28 @@ class User(AbstractUser):
     def __str__(self):
         return self.name_user
 
+    def get_department_roles(self):
+       """Retourne un dictionnaire des rôles de l'utilisateur pour chaque département."""
+       roles = {}
+
+    # Vérifier si departement_principal existe avant d'accéder à son id
+       if self.departement_principal and isinstance(self.departement_principal, Department):
+          user_role = UserDepartmentRole.objects.filter(user=self, department=self.departement_principal).first()
+          if user_role:
+            roles[self.departement_principal.id_department] = user_role.role  # ⚠️ Correction ici
+
+    # Vérifier les départements secondaires
+       for udr in UserDepartmentRole.objects.filter(user=self):
+           if udr.department and isinstance(udr.department, Department):  # Sécurité ajoutée
+               roles[udr.department.id_department] = udr.role  # ⚠️ Correction ici
+
+       return roles
+
+
+
 class UserDepartmentRole(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    department = models.ForeignKey(Department, on_delete=models.CASCADE)
+    department = models.ForeignKey('Department', on_delete=models.CASCADE)
     
     ROLE_CHOICES = [
         ('0', '----'),
