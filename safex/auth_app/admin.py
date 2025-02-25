@@ -10,20 +10,6 @@ class AdminArea(admin.AdminSite):
 
 safex = AdminArea(name='safex')    
 
-### 🔹 Gestion des fichiers (Files)
-class AdminFiles(admin.ModelAdmin):
-    fields = ['name_file', 'date', 'file_upload']
-    exclude = ('id_user',)
-
-    def save_model(self, request, obj, form, change):
-        if not obj.id_user:  
-            obj.id_user = request.user
-        
-        if not obj.id_department and request.user.departement_principal:  
-            obj.id_department = request.user.departement_principal
-        
-        obj.save()
-
 ### 🔹 Gestion des départements
 class AdminDep(admin.ModelAdmin):
     list_display = ['id_department', 'name_dep']
@@ -88,7 +74,6 @@ class CustomUserAdmin(UserAdmin):
 
 
 # Enregistrement des modèles
-safex.register(Files, AdminFiles)
 safex.register(Department, AdminDep)
 safex.register(User, CustomUserAdmin)
 safex.register(UserDepartmentRole)

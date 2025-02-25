@@ -3,7 +3,8 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
-from .models import Files  
+from django.shortcuts import get_object_or_404
+from .models import Files, Department  
 from .forms_file import FilesForm  
 
 User = get_user_model()
@@ -13,18 +14,16 @@ def connexion(request):
         email = request.POST['email']
         password = request.POST['password']
 
-        # Vérifier si un utilisateur existe avec cet email
         try:
-            user = User.objects.get(mail_user=email)  # Rechercher l'utilisateur avec mail_user
+            user = User.objects.get(mail_user=email)  # Vérifie l'email
         except User.DoesNotExist:
             messages.error(request, "Utilisateur non trouvé.")
             return render(request, 'connexion.html')
 
-        # Authentifier l'utilisateur avec l'email en tant qu'identifiant
         user = authenticate(request, username=email, password=password)
         if user is not None:
             login(request, user)
-            return redirect('acceuil')  # Redirige vers la page d'accueil
+            return redirect('acceuil')  
         else:
             messages.error(request, "Mot de passe incorrect.")
 
@@ -34,22 +33,37 @@ def connexion(request):
 @login_required
 def acceuil(request):
     """ Page d'accueil avec liste des fichiers selon le rôle de l'utilisateur """
-
     user = request.user  
-    fichiers = Files.objects.none()  # Par défaut, aucun fichier
+    fichiers = Files.objects.none()  
 
-    # Récupère les rôles de l'utilisateur dans chaque département
-    department_roles = user.get_department_roles()
+    department_roles = user.get_department_roles() if hasattr(user, 'get_department_roles') else {}
+
+    print("Roles dict :", department_roles)  
+
+    if not isinstance(department_roles, dict):
+        department_roles = {}  
+
+    print("Roles dict pour", user.username, ":", department_roles)
     
-    # Liste des départements où l'utilisateur peut au moins "sélectionner"
-    authorized_departments = [dep_id for dep_id, role in department_roles.items() if role in ['1', '4', '5', '7']]
+    # Départements où l'utilisateur peut voir les fichiers
+    authorized_departments = [dep for dep, role in department_roles.items() if role in ['1', '4', '5', '7']]
+    
+    # Départements où l'utilisateur peut ajouter un fichier
+    departments_allowed = Department.objects.filter(id_department__in=[
+    int(dep) for dep, role in department_roles.items() if role in ['2', '4', '6', '7']
+    ])
 
-    # Récupère les fichiers des départements autorisés
     if authorized_departments:
         fichiers = Files.objects.filter(id_department__in=authorized_departments)
 
-    return render(request, 'acceuil.html', {'fichiers': fichiers, 'roles': department_roles})
+    print("Départements autorisés :", authorized_departments)
+    print("Départements où ajout autorisé :", departments_allowed)
 
+    return render(request, 'acceuil.html', {
+        'fichiers': fichiers,
+        'roles_dict': department_roles,
+        'departments_allowed': departments_allowed,  # 🔥 Variable pour le template
+    })
 
 
 @login_required
@@ -59,14 +73,23 @@ def ajouter_fichier(request):
         form = FilesForm(request.POST, request.FILES)
         if form.is_valid():
             fichier = form.save(commit=False)
-            fichier.id_user = request.user  # ✅ Associe l'utilisateur
+            fichier.id_user = request.user  
 
-            # ✅ Assigne automatiquement le département principal de l'utilisateur
-            if request.user.departement_principal:
-                fichier.id_department = request.user.departement_principal  
+            # Vérifier si un département a été sélectionné
+            department_id = request.GET.get("department")
+            if department_id:
+                try:
+                    fichier.id_department = Department.objects.get(id=department_id)
+                except Department.DoesNotExist:
+                    messages.error(request, "Département invalide.")
+                    return redirect('ajouter_fichier')
             else:
-                messages.error(request, "Vous devez avoir un département principal.")
-                return redirect('ajouter_fichier')
+                # Assigner automatiquement le département principal si non choisi
+                if request.user.departement_principal:
+                    fichier.id_department = request.user.departement_principal  
+                else:
+                    messages.error(request, "Vous devez avoir un département principal ou en sélectionner un.")
+                    return redirect('ajouter_fichier')
 
             fichier.save()
             messages.success(request, "Fichier ajouté avec succès !")
@@ -76,21 +99,26 @@ def ajouter_fichier(request):
     
     return render(request, 'ajouter_fichier.html', {'form': form})
 
+
 @login_required
 def supprimer_fichier(request, fichier_id):
     """ Suppression d'un fichier selon le rôle de l'utilisateur """
-
-    fichier = Files.objects.get(id=fichier_id)
+    fichier = get_object_or_404(Files, id=fichier_id)
     user_roles = request.user.get_department_roles()
 
-    # Vérifie si l'utilisateur a la permission de supprimer dans ce département
-    if fichier.id_department.id in user_roles and user_roles[fichier.id_department.id] in ['3', '5', '6', '7']:
+    # Vérifier que user_roles est bien un dictionnaire
+    if not isinstance(user_roles, dict):
+        user_roles = {}
+
+    # Vérifier si l'utilisateur a la permission de supprimer le fichier
+    if fichier.id_department.pk in user_roles and user_roles[fichier.id_department.pk] in ['3', '5', '6', '7']:
         fichier.delete()
         messages.success(request, "Fichier supprimé avec succès !")
     else:
         messages.error(request, "Vous n'avez pas l'autorisation de supprimer ce fichier.")
 
     return redirect('acceuil')
+
 
 @login_required
 def deconnexion(request):

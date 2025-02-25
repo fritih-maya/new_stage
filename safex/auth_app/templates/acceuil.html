@@ -40,8 +40,12 @@
         }
         .buttons {
             display: flex;
-            gap: 15px;
+            flex-direction: column;
+            align-items: center;
             margin-bottom: 20px;
+        }
+        .select-department {
+            margin-bottom: 10px;
         }
         button {
             background: #009579;
@@ -79,49 +83,30 @@
             background: #009579;
             color: #fff;
         }
-        .actions {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-        }
-        .actions a, .actions form button {
-            text-decoration: none;
-            padding: 5px 10px;
-            border-radius: 5px;
-            color: white;
-            font-size: 14px;
-        }
-        .download {
-            background: #2980b9;
-        }
-        .delete {
-            background: #e74c3c;
-        }
     </style>
 </head>
 <body>
-
     <div class="dashboard">
         <h2>Bienvenue, {{ request.user.name_user }} !</h2>
-        
-        <!-- Boutons d'actions -->
         <div class="buttons">
-            {% for department in user.departements.all %}
-                {% with role=roles_dict|get_item:department.id %}
-                    {% if role in "2,4,6,7" %}
-                        <button onclick="window.location.href='{% url 'ajouter_fichier' %}'">
-                            <i class="fas fa-upload"></i> Ajouter un fichier
-                        </button>
-                    {% endif %}
-                {% endwith %}
-            {% endfor %}
-            
+            {% if departments_allowed|length == 1 %}
+                <p>Département : {{ departments_allowed.0.name_dep }}</p>
+                <a href="{% url 'ajouter_fichier' %}" class="btn btn-success">📤 Ajouter un fichier</a>
+            {% elif departments_allowed|length > 1 %}
+                <form method="GET" action="{% url 'ajouter_fichier' %}">
+                    <label for="department">Choisissez un département :</label>
+                    <select name="department" id="department" class="select-department">
+                        {% for dep in departments_allowed %}
+                            <option value="{{ dep.id }}">{{ dep.name_dep }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit">📤 Ajouter un fichier</button>
+                </form>
+            {% endif %}
             <button class="logout" onclick="window.location.href='{% url 'deconnexion' %}'">
                 <i class="fas fa-sign-out-alt"></i> Déconnexion
             </button>
         </div>
-
-        <!-- Liste des fichiers -->
         <h3>Fichiers accessibles</h3>
         <table>
             <thead>
@@ -134,34 +119,25 @@
             </thead>
             <tbody>
                 {% for fichier in fichiers %}
-                    {% with role=roles_dict|get_item:fichier.id_department.id %}
-                        {% if fichier.id_department in user.departements.all or fichier.id_department == user.departement_principal %}
-                            <tr>
-                                <td>{{ fichier.name_file }}</td>
-                                <td>{{ fichier.id_department.name_dep }}</td>
-                                <td>{{ fichier.date|date:"Y-m-d H:i:s" }}</td>
-                                <td class="actions">
-                                    {% if role in "1,4,5,7" %}
-                                        <a href="{{ fichier.file_upload.url }}" class="download" download>
-                                            <i class="fas fa-download"></i> Télécharger
-                                        </a>
-                                    {% endif %}
-                                    {% if role in "3,5,6,7" %}
-                                        <form method="POST" action="{% url 'supprimer_fichier' fichier.id %}">
-                                            {% csrf_token %}
-                                            <button type="submit" class="delete">
-                                                <i class="fas fa-trash"></i> Supprimer
-                                            </button>
-                                        </form>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        {% endif %}
-                    {% endwith %}
+                    <tr>
+                        <td>{{ fichier.name_file }}</td>
+                        <td>{{ fichier.id_department.name_dep }}</td>
+                        <td>{{ fichier.date|date:"Y-m-d H:i:s" }}</td>
+                        <td class="actions">
+                            <a href="{{ fichier.file_upload.url }}" class="download" download>
+                                <i class="fas fa-download"></i> Télécharger
+                            </a>
+                            <form method="POST" action="{% url 'supprimer_fichier' fichier.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="delete">
+                                    <i class="fas fa-trash"></i> Supprimer
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
-
 </body>
 </html>
