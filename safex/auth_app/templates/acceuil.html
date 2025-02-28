@@ -9,7 +9,7 @@
     <title>Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
         * {
             margin: 0;
             padding: 0;
@@ -19,69 +19,155 @@
         body {
             min-height: 100vh;
             width: 100%;
-            background: #f4f4f4;
+            background: linear-gradient(135deg, #87CEEB, #B0E0E6);
             display: flex;
             justify-content: center;
             align-items: center;
             flex-direction: column;
+            padding: 20px;
+            position: relative;
         }
         .dashboard {
-            width: 80%;
-            max-width: 900px;
+            width: 100%;
+            max-width: 1200px;
             background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            padding: 40px;
             text-align: center;
+            margin: 30px auto;
         }
-        h2, h3 {
+        h2 {
             margin-bottom: 20px;
             color: #333;
+            font-size: 28px;
+            font-weight: 600;
         }
         .buttons {
             display: flex;
             flex-direction: column;
             align-items: center;
+            gap: 15px;
             margin-bottom: 20px;
         }
         .select-department {
             margin-bottom: 10px;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
         }
-        button {
-            background: #009579;
+        button, .btn {
+            background: #0088CC;
             color: #fff;
-            padding: 10px;
+            padding: 12px 18px;
             font-size: 16px;
             border: none;
-            border-radius: 5px;
+            border-radius: 6px;
             cursor: pointer;
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 10px;
+            gap: 8px;
+            transition: 0.3s ease;
+            text-decoration: none;
         }
-        button:hover {
-            background: #007a63;
+        button:hover, .btn:hover {
+            background: #0077B6;
         }
         .logout {
-            background: #e74c3c;
+            background: #dc3545;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: fit-content;
+            min-width: 200px; 
+            text-align: center;
+            font-size: 14px;
+            padding: 12px 20px; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 6px; 
+            z-index: 1000;
         }
         .logout:hover {
-            background: #c0392b;
+            background: #b52a38;
         }
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            overflow: hidden;
         }
         th, td {
-            padding: 10px;
-            border: 1px solid #ddd;
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
             text-align: center;
         }
         th {
-            background: #009579;
+            background: #0088CC;
             color: #fff;
+        }
+        tr:hover {
+            background: rgba(0, 136, 204, 0.1);
+        }
+        .actions {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        .download {
+            background: #28a745;
+            padding: 6px 12px;
+            border-radius: 6px;
+            color: white;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            border: none;
+            cursor: pointer;
+        }
+        .download:hover {
+            background: #218838;
+        }
+        .delete {
+            background: #dc3545;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .delete i {
+            margin-right: 5px;
+        }
+        .buttons form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            margin: 0 auto;
+        }
+        .add-file {
+            display: block;
+            margin: 20px auto;
+            padding: 12px 20px;
+            width: fit-content;
+            text-align: center;
+        }
+        @media (max-width: 768px) {
+            .dashboard {
+                width: 100%;
+                padding: 20px;
+            }
+            .buttons {
+                flex-direction: column;
+            }
+            button {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -90,8 +176,8 @@
         <h2>Bienvenue, {{ request.user.name_user }} !</h2>
         <div class="buttons">
             {% if departments_allowed|length == 1 %}
-                <p>Département : {{ departments_allowed.0.name_dep }}</p>
-                <a href="{% url 'ajouter_fichier' %}" class="btn btn-success">📤 Ajouter un fichier</a>
+                <p>Département : <strong>{{ departments_allowed.0.name_dep }}</strong></p>
+                <a href="{% url 'ajouter_fichier' %}" class="btn add-file">📤 Ajouter un fichier</a>
             {% elif departments_allowed|length > 1 %}
                 <form method="GET" action="{% url 'ajouter_fichier' %}">
                     <label for="department">Choisissez un département :</label>
@@ -103,9 +189,6 @@
                     <button type="submit">📤 Ajouter un fichier</button>
                 </form>
             {% endif %}
-            <button class="logout" onclick="window.location.href='{% url 'deconnexion' %}'">
-                <i class="fas fa-sign-out-alt"></i> Déconnexion
-            </button>
         </div>
         <h3>Fichiers accessibles</h3>
         <table>
@@ -139,5 +222,8 @@
             </tbody>
         </table>
     </div>
+    <button class="logout" onclick="window.location.href='{% url 'deconnexion' %}'">
+        <i class="fas fa-sign-out-alt"></i> Déconnexion
+    </button>
 </body>
 </html>

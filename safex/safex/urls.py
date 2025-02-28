@@ -19,8 +19,8 @@ urlpatterns = [
     path('ajouter_fichier/', views.ajouter_fichier, name='ajouter_fichier'),
      path('supprimer_fichier/<int:fichier_id>/', views.supprimer_fichier, name='supprimer_fichier'),
 
-    # Redirection de l'URL racine vers la page de connexion
-     path('', lambda request: redirect('connexion'), name='home'),
+    # Redirection de l'URL racine vers la page d'acceuil'
+     path('', lambda request: redirect('acceuil'), name='home'),
 ]
 
 if settings.DEBUG:
