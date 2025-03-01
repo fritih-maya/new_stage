@@ -20,7 +20,7 @@ urlpatterns = [
      path('supprimer_fichier/<int:fichier_id>/', views.supprimer_fichier, name='supprimer_fichier'),
 
     # Redirection de l'URL racine vers la page d'acceuil'
-     path('', lambda request: redirect('acceuil'), name='home'),
+     path('', lambda request: redirect('connexion'), name='home'),
 ]
 
 if settings.DEBUG:

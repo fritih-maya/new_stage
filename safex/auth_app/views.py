@@ -79,7 +79,7 @@ def ajouter_fichier(request):
             department_id = request.GET.get("department")
             if department_id:
                 try:
-                    fichier.id_department = Department.objects.get(id=department_id)
+                    fichier.id_department = Department.objects.get(id_department=department_id)
                 except Department.DoesNotExist:
                     messages.error(request, "Département invalide.")
                     return redirect('ajouter_fichier')
